@@ -188,3 +188,6 @@ void* SDLGLSupport::getProcAddress(const String& procname)
 {
     return SDL_GL_GetProcAddress(procname.c_str());
 }
+void SDLGLSupport::setConfigOption(const String &name, const String &value)
+{
+}

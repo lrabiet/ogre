@@ -108,6 +108,17 @@ namespace OgreBites
 @end
 #endif
 
+#if OGRE_PLATFORM == OGRE_PLATFORM_EMSCRIPTEN
+#include "browser/BrowserInputManager.h"
+#include <emscripten.h>
+
+Ogre::Root *root;
+extern "C" void renderOneFrame()
+{
+	root->renderOneFrame();
+}
+#endif
+
 namespace OgreBites
 {
 #ifdef USE_RTSHADER_SYSTEM
@@ -968,7 +979,93 @@ protected:
 
 			SampleContext::windowResized(rw);
 		}
+#if OGRE_PLATFORM == OGRE_PLATFORM_EMSCRIPTEN
+        virtual void createRoot()
+        {
+            mRoot = OGRE_NEW Ogre::Root("data/plugins.cfg", "data/ogre.cfg","data/ogre.log");
 
+         }
+		virtual void locateResources()
+		{
+			// load resource paths from config file
+			Ogre::ConfigFile cf;
+			cf.load(mFSLayer->getConfigFilePath("data/resources.cfg"));
+
+			Ogre::ConfigFile::SectionIterator seci = cf.getSectionIterator();
+			Ogre::String sec, type, arch;
+
+			// go through all specified resource groups
+			while (seci.hasMoreElements())
+			{
+				sec = seci.peekNextKey();
+				Ogre::ConfigFile::SettingsMultiMap* settings = seci.getNext();
+				Ogre::ConfigFile::SettingsMultiMap::iterator i;
+
+				// go through all resource paths
+				for (i = settings->begin(); i != settings->end(); i++)
+				{
+					type = i->first;
+					arch = i->second;
+
+					Ogre::ResourceGroupManager::getSingleton().addResourceLocation(arch, type, sec);
+				}
+			}
+		}
+		/*-----------------------------------------------------------------------------
+		| Sets up OIS input.
+		-----------------------------------------------------------------------------*/
+		virtual void setupInput(bool nograb = false)
+		{
+			OIS::ParamList pl;
+			mInputMgr = OIS::InputManager::createInputSystem(pl);
+
+			createInputDevices();      // create the specific input devices
+
+			windowResized(mWindow);    // do an initial adjustment of mouse area
+		}
+		virtual void createInputDevices()
+		{
+			OIS::BrowserInputManager *inputMgr=static_cast<OIS::BrowserInputManager*>(mInputMgr);
+			OIS::Object* obj = inputMgr->createInputObject(OIS::OISKeyboard, true);
+			mKeyboard = static_cast<OIS::Keyboard*>(obj);
+			mMouse = static_cast<OIS::Mouse*>(inputMgr->createInputObject(OIS::OISMouse, true));
+
+			mKeyboard->setEventCallback(this);
+			mMouse->setEventCallback(this);
+		}
+		virtual void shutdownInput()
+		{
+			OIS::BrowserInputManager *inputMgr=static_cast<OIS::BrowserInputManager*>(mInputMgr);
+			if (inputMgr)
+			{
+				inputMgr->destroyInputObject(mKeyboard);
+				inputMgr->destroyInputObject(mMouse);
+
+				OIS::InputManager::destroyInputSystem(inputMgr);
+				mInputMgr = 0;
+			}
+		}
+
+		virtual void go(Sample* initialSample = 0)
+		{
+			while (!mLastRun)
+			{
+				mLastRun = true;  // assume this is our last run
+
+				initApp(initialSample);
+
+				if (mRoot->getRenderSystem() != NULL){
+					mRoot->startRendering();    // start the render loop
+				}
+				root=mRoot;    
+				EM_ASM(
+				  return GetFunction('RequestAnimation')(_renderOneFrame);
+				);
+
+			}
+		}
+
+#endif
         /*-----------------------------------------------------------------------------
          | Extends setup to create dummy scene and tray interface.
          -----------------------------------------------------------------------------*/
@@ -1117,7 +1214,12 @@ protected:
 #elif OGRE_PLATFORM == OGRE_PLATFORM_ANDROID
 			// TODO: what to do here...
 #else
+#if OGRE_PLATFORM == OGRE_PLATFORM_EMSCRIPTEN
+			mRoot->initialise(false, "OGRE Sample Browser");
+			Ogre::RenderWindow* res =mRoot->createRenderWindow("Window", 1024, 768, true);
+#else
 			Ogre::RenderWindow* res = mRoot->initialise(true, "OGRE Sample Browser");
+#endif
 #endif
 
 #if OGRE_PLATFORM == OGRE_PLATFORM_APPLE_IOS
@@ -1258,8 +1360,11 @@ protected:
             sampleList.push_back("Sample_TextureFX");
 #else
 			Ogre::ConfigFile cfg;
+#if OGRE_PLATFORM == OGRE_PLATFORM_EMSCRIPTEN
+			cfg.load(mFSLayer->getConfigFilePath("data/samples.cfg"));
+#else
 			cfg.load(mFSLayer->getConfigFilePath("samples.cfg"));
-
+#endif
 			Ogre::String sampleDir = cfg.getSetting("SampleFolder");        // Mac OS X just uses Resources/ directory
 			Ogre::StringVector sampleList = cfg.getMultiSetting("SamplePlugin");
 			Ogre::String startupSampleTitle = cfg.getSetting("StartupSample");
@@ -1339,7 +1444,12 @@ protected:
 				}
 
 				Ogre::Plugin* p = mRoot->getInstalledPlugins().back();   // acquire plugin instance
+//FIXME it not work on emscripten
+#if OGRE_PLATFORM == OGRE_PLATFORM_EMSCRIPTEN
+				SamplePlugin* sp = static_cast<SamplePlugin*>(p);
+#else
 				SamplePlugin* sp = dynamic_cast<SamplePlugin*>(p);
+#endif
 
 				if (!sp)  // this is not a SamplePlugin, so unload it
 				{

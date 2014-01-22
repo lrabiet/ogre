@@ -234,6 +234,10 @@ namespace Ogre {
         mEmbeddedZipArchiveFactory = OGRE_NEW EmbeddedZipArchiveFactory();
         ArchiveManager::getSingleton().addArchiveFactory( mEmbeddedZipArchiveFactory );
 #endif
+
+//move to the end, codec not work 
+#if (OGRE_PLATFORM != OGRE_PLATFORM_EMSCRIPTEN)
+
 #if OGRE_NO_DDS_CODEC == 0
 		// Register image codecs
 		DDSCodec::startup();
@@ -250,6 +254,7 @@ namespace Ogre {
         PVRTCCodec::startup();
 #endif
 
+#endif
         mHighLevelGpuProgramManager = OGRE_NEW HighLevelGpuProgramManager();
 
 		mExternalTextureSourceManager = OGRE_NEW ExternalTextureSourceManager();
@@ -278,6 +283,33 @@ namespace Ogre {
         if (!pluginFileName.empty())
             loadPlugins(pluginFileName);
 
+#if (OGRE_PLATFORM == OGRE_PLATFORM_EMSCRIPTEN)
+
+#if OGRE_NO_DDS_CODEC == 0
+                // Register image codecs
+                DDSCodec::startup();
+#endif
+#if OGRE_NO_FREEIMAGE == 0
+                // Register image codecs
+                FreeImageCodec::startup();
+#endif
+#if OGRE_NO_DDS_CODEC == 0
+                // Register image codecs
+                DDSCodec::startup();
+#endif
+#if OGRE_NO_FREEIMAGE == 0
+                // Register image codecs
+                FreeImageCodec::startup();
+#endif
+#if OGRE_NO_DEVIL == 0
+            // Register image codecs
+            ILCodecs::registerCodecs();
+#endif
+#if OGRE_NO_PVRTC_CODEC == 0
+        PVRTCCodec::startup();
+#endif
+
+#endif
 		LogManager::getSingleton().logMessage("*-*-* OGRE Initialising");
         msg = "*-*-* Version " + mVersion;
         LogManager::getSingleton().logMessage(msg);
@@ -970,6 +1002,7 @@ namespace Ogre {
         // or break out by calling queueEndRendering()
         mQueuedEnd = false;
 
+#if (OGRE_PLATFORM != OGRE_PLATFORM_EMSCRIPTEN)
         while( !mQueuedEnd )
         {
 			//Pump messages in all registered RenderWindow windows
@@ -978,10 +1011,16 @@ namespace Ogre {
 			if (!renderOneFrame())
                 break;
         }
+#endif
     }
     //-----------------------------------------------------------------------
     bool Root::renderOneFrame(void)
     {
+#if (OGRE_PLATFORM == OGRE_PLATFORM_EMSCRIPTEN)
+       //Pump messages in all registered RenderWindow windows
+       WindowEventUtilities::messagePump();
+
+#endif
         if(!_fireFrameStarted())
             return false;
 

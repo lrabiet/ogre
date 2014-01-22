@@ -126,9 +126,9 @@ namespace Ogre {
 #   endif
 #elif defined( EMSCRIPTEN ) 
 #   define OGRE_PLATFORM OGRE_PLATFORM_EMSCRIPTEN
-#   ifndef OGRE_STATIC_LIB
-#       error OGRE must be built as static for Emscripten (OGRE_STATIC=true in CMake)
-#   endif
+//#   ifndef OGRE_STATIC_LIB
+//#       error OGRE must be built as static for Emscripten (OGRE_STATIC=true in CMake)
+//#   endif
 #   ifdef OGRE_BUILD_RENDERSYSTEM_D3D9
 #       error D3D9 is not supported on Emscripten (OGRE_BUILD_RENDERSYSTEM_D3D9 false in CMake)
 #   endif

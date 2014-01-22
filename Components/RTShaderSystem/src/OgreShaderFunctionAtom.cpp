@@ -325,7 +325,7 @@ bool FunctionInvocation::FunctionInvocationLessThan::operator ()(FunctionInvocat
             return false;
     }
 
-    return true;
+    return false;
 }
 
 bool FunctionInvocation::FunctionInvocationCompare::operator ()(FunctionInvocation const& lhs, FunctionInvocation const& rhs) const

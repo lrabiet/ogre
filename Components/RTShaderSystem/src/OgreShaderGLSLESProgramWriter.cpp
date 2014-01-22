@@ -267,9 +267,11 @@ namespace Ogre {
 
             const UniformParameterList& parameterList = program->getParameters();
             UniformParameterConstIterator itUniformParam = parameterList.begin();
-            
+           
+#if OGRE_PLATFORM != OGRE_PLATFORM_EMSCRIPTEN 
             // Write the current version (this forces the driver to fulfill the glsl es standard)
             os << "#version "<< mGLSLVersion << ENDL;
+#endif
 
             // Default precision declaration is required in fragment and vertex shaders.
             os << "precision highp float;" << ENDL;

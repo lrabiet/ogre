@@ -32,15 +32,18 @@ THE SOFTWARE.
 #include "OgrePlatformInformation.h"
 #include "OgreMemoryTracker.h"
 
-#if OGRE_MEMORY_ALLOCATOR == OGRE_MEMORY_ALLOCATOR_NEDPOOLING
+#if (OGRE_PLATFORM == OGRE_PLATFORM_EMSCRIPTEN|| OGRE_MEMORY_ALLOCATOR == OGRE_MEMORY_ALLOCATOR_NEDPOOLING)
 
+#if OGRE_PLATFORM != OGRE_PLATFORM_EMSCRIPTEN
 // include ned implementation
 #include <nedmalloc.c>
+#endif
 
 namespace Ogre
 {
 	namespace _NedPoolingIntern
 	{
+#if OGRE_PLATFORM != OGRE_PLATFORM_EMSCRIPTEN
 		const size_t s_poolCount = 14; // Needs to be greater than 4
 		void* s_poolFootprint = reinterpret_cast<void*>(0xBB1AA45A);
 		nedalloc::nedpool* s_pools[s_poolCount + 1] = { 0 };
@@ -70,9 +73,12 @@ namespace Ogre
 
 			return poolID;
 		}
-
+#endif
 		void* internalAlloc(size_t a_reqSize)
 		{
+#if OGRE_PLATFORM == OGRE_PLATFORM_EMSCRIPTEN
+          		return malloc(a_reqSize);
+#else
 			size_t poolID = poolIDFromSize(a_reqSize);
 			nedalloc::nedpool* pool(0); // A pool pointer of 0 means the default pool.
 
@@ -90,10 +96,14 @@ namespace Ogre
 			}
 
 			return nedalloc::nedpmalloc(pool, a_reqSize);
+#endif
 		}
 
 		void* internalAllocAligned(size_t a_align, size_t a_reqSize)
 		{
+#if OGRE_PLATFORM == OGRE_PLATFORM_EMSCRIPTEN
+			return malloc(a_reqSize);
+#else
 			size_t poolID = poolIDFromSize(a_reqSize);
 			nedalloc::nedpool* pool(0); // A pool pointer of 0 means the default pool.
 
@@ -111,10 +121,14 @@ namespace Ogre
 			}
 
 			return nedalloc::nedpmemalign(pool, a_align, a_reqSize);
+#endif
 		}
 
 		void internalFree(void* a_mem)
 		{
+#if OGRE_PLATFORM == OGRE_PLATFORM_EMSCRIPTEN
+			free(a_mem);
+#else
 			if (a_mem)
 			{
 				nedalloc::nedpool* pool(0);
@@ -134,6 +148,7 @@ namespace Ogre
 					nedalloc::nedfree(a_mem);
 				}
 			}
+#endif
 		}
 	}
 

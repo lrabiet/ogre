@@ -397,6 +397,10 @@ namespace Ogre
     ValueType any_cast(const Any & operand)
     {
         const ValueType * result = any_cast<ValueType>(&operand);
+#if OGRE_PLATFORM == OGRE_PLATFORM_EMSCRIPTEN
+//FIXME it not work on emscripten
+        return *result;
+#endif
         if(!result)
 		{
 			StringUtil::StrStreamType str;

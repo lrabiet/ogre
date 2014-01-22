@@ -30,6 +30,10 @@ THE SOFTWARE.
 
 #include "OgrePrerequisites.h"
 
+#if OGRE_PLATFORM == OGRE_PLATFORM_EMSCRIPTEN
+#include <dlfcn.h>
+#endif
+
 #if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
 #    define DYNLIB_HANDLE hInstance
 #    define DYNLIB_LOAD( a ) LoadLibraryEx( a, NULL, LOAD_WITH_ALTERED_SEARCH_PATH )
@@ -39,7 +43,8 @@ THE SOFTWARE.
 struct HINSTANCE__;
 typedef struct HINSTANCE__* hInstance;
 
-#elif OGRE_PLATFORM == OGRE_PLATFORM_LINUX || OGRE_PLATFORM == OGRE_PLATFORM_ANDROID
+#elif OGRE_PLATFORM == OGRE_PLATFORM_LINUX || OGRE_PLATFORM == OGRE_PLATFORM_ANDROID|| \
+      OGRE_PLATFORM == OGRE_PLATFORM_EMSCRIPTEN
 #    define DYNLIB_HANDLE void*
 #    define DYNLIB_LOAD( a ) dlopen( a, RTLD_LAZY | RTLD_GLOBAL)
 #    define DYNLIB_GETSYM( a, b ) dlsym( a, b )
@@ -51,8 +56,7 @@ typedef struct HINSTANCE__* hInstance;
 #    define DYNLIB_GETSYM( a, b ) dlsym( a, b )
 #    define DYNLIB_UNLOAD( a ) dlclose( a )
 
-#elif OGRE_PLATFORM == OGRE_PLATFORM_SYMBIAN || OGRE_PLATFORM == OGRE_PLATFORM_NACL || \
-      OGRE_PLATFORM == OGRE_PLATFORM_EMSCRIPTEN
+#elif OGRE_PLATFORM == OGRE_PLATFORM_SYMBIAN || OGRE_PLATFORM == OGRE_PLATFORM_NACL
 #    define DYNLIB_HANDLE void*
 #    define DYNLIB_LOAD( a ) 0
 #    define DYNLIB_GETSYM( a, b ) 0

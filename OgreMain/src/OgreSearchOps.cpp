@@ -33,13 +33,13 @@ THE SOFTWARE.
 #include <stdio.h>
 #include <ctype.h>
 
-#if OGRE_PLATFORM == OGRE_PLATFORM_SYMBIAN
+#if OGRE_PLATFORM == OGRE_PLATFORM_SYMBIAN || OGRE_PLATFORM == OGRE_PLATFORM_EMSCRIPTEN
 #include "OgreString.h"
 
 // SYMBIAN todo - possibly use - CDirScan from C:\Symbian\9.2\S60_3rd_FP1\Epoc32\include\f32file.h
 // see this sample - http://wiki.forum.nokia.com/index.php/Find_Files
 
-bool fnmatch (Ogre::String pattern, Ogre::String name, int dummy)
+bool _fnmatch (Ogre::String pattern, Ogre::String name, int dummy)
 {
 	if (pattern == "*")
 	{
@@ -133,8 +133,13 @@ int _findnext(long id, struct _finddata_t *data)
             return -1;
 
         /* See if the filename matches our pattern */
+#if OGRE_PLATFORM == OGRE_PLATFORM_SYMBIAN || OGRE_PLATFORM == OGRE_PLATFORM_EMSCRIPTEN
+		if (_fnmatch (fs->pattern, entry->d_name, 0) == 0)
+			break;
+#else
         if (fnmatch (fs->pattern, entry->d_name, 0) == 0)
             break;
+#endif
     }
 
     if (fs->curfn)

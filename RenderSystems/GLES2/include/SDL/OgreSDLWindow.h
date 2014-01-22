@@ -30,6 +30,7 @@ THE SOFTWARE.
 #define __SDLWindow_H__
 
 #include "OgreSDLGLSupport.h"
+#include "SDL/SDL.h"
 
 namespace Ogre {
 	class SDLGLContext;
